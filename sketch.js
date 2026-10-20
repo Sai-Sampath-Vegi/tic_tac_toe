@@ -22,6 +22,16 @@ function createBoard(boardLength) {
   return board;
 }
 
+function clearBoard(board, boardLength) {
+  for (let row = 0; row < boardLength; row++) {
+    for (let col = 0; col < boardLength; col++) {
+      board[row][col] = "";
+    }
+  }
+
+  return board;
+}
+
 function createTexture(pixel, boardLength) {
   const textureWidth = (boardLength + 1) * pixel.width;
   const textureHeight = (boardLength + 1) * pixel.height;
@@ -143,6 +153,10 @@ function update(world) {
   if (keyPressed === r.KEY_ENTER) {
     makeMove(world);
   }
+
+  if (keyPressed === r.KEY_R) {
+    world.board = clearBoard(world.board, world.boardLength);
+  }
 }
 
 function drawBoardToWindow(texture) {
@@ -153,14 +167,14 @@ function drawBoardToWindow(texture) {
 }
 
 function draw(world) {
-  const formattedText = `Enter player ${world.movesCount % 2 + 1} position: ${world.position}`;
+  const prompt = `Enter player ${world.movesCount % 2 + 1} position: ${world.position}`;
 
   r.BeginDrawing();
   r.ClearBackground(r.BLACK);
 
   drawBoardToWindow(world.texture);
 
-  r.DrawText(formattedText, 0, world.texture.height + 30, 20, r.WHITE);
+  r.DrawText(prompt, 0, world.texture.height + 30, 20, r.WHITE);
 
   r.EndDrawing();
 }
