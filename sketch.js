@@ -47,7 +47,7 @@ function createPixel(width, height, lineThickness, textSize, color) { return { w
 
 function toAscii(char) { return char.charCodeAt(0); }
 
-function getPlayerChar(movesCount, player1Char, player2Char) { return movesCount % 2 === 0 ? player1Char : player2Char; }
+function getPlayerChar(movesCount, player1Choice, player2Choice) { return movesCount % 2 === 0 ? player1Choice : player2Choice; }
 
 function init() {
   const screen = createScreen(400, 400, "Tic Tac Toe");
@@ -56,12 +56,13 @@ function init() {
   const board = createBoard(boardLength);
   const position = "";
   const positionDelimiter = "-";
-  const player1Char = "X";
-  const player2Char = "O";
+  const player1Choice = "X";
+  const player2Choice = "O";
   const movesCount = 0;
   const isPlaying = true;
+  const playerWon = false;
 
-  return { screen, pixel, board, boardLength, position, positionDelimiter, player1Char, player2Char, movesCount, isPlaying, };
+  return { screen, pixel, board, boardLength, position, positionDelimiter, player1Choice, player2Choice, movesCount, isPlaying, playerWon, };
 }
 
 function setup() {
@@ -138,7 +139,7 @@ function makeMove(world) {
     const col = parseInt(positions[1]) - 1;
 
     if (!(row < 0 || col < 0 || row >= world.boardLength || col >= world.boardLength) && !world.board[row][col]) {
-      world.board[row][col] = getPlayerChar(world.movesCount, world.player1Char, world.player2Char);
+      world.board[row][col] = getPlayerChar(world.movesCount, world.player1Choice, world.player2Choice);
       world.movesCount++;
     }
   }
@@ -148,6 +149,88 @@ function makeMove(world) {
 
 function updatePlayingStatus(movesCount, boardLength, isPlaying) {
   return movesCount === (boardLength * boardLength) ? false : isPlaying;
+}
+
+function resetGameState(world) {
+  world.board = clearBoard(world.board, world.boardLength);
+  world.movesCount = 0;
+  world.isPlaying = true;
+  world.playerWon = false;
+}
+
+function anyRowsMatching(board, currentPlayerChoice) {
+  let playerWon = false;
+
+  for (const row of board) {
+    playerWon = true;
+
+    for (const col of row) {
+      if (col !== currentPlayerChoice) playerWon = false;
+    }
+
+    if (playerWon) return true;
+  }
+
+  return false;
+}
+
+function anyColsMatching(board, boardLength, currentPlayerChoice) {
+  let playerWon = false;
+
+  for (let row = 0; row < boardLength; row++) {
+    playerWon = true;
+
+    for (let col = 0; col < boardLength; col++) {
+      if (board[col][row] !== currentPlayerChoice) playerWon = false;
+    }
+
+    if (playerWon) return true;
+  }
+
+  return false;
+}
+
+function getDiagonals(boardLength) {
+  const diagonals = [[], []];
+
+  for (let i = 0; i < boardLength; i++) {
+    diagonals[0].push({ row: i, col: i });
+    diagonals[1].push({ row: i, col: boardLength - i - 1 });
+  }
+
+  return diagonals;
+}
+
+function anyDiagonalsMatching(board, boardLength, currentPlayerChoice) {
+  const diagonals = getDiagonals(boardLength);
+  let playerWon = false;
+
+  for (let i = 0; i < 2; i++) {
+    playerWon = true;
+
+    for (let j = 0; j < diagonals[i].length; j++) {
+      const row = diagonals[i][j].row;
+      const col = diagonals[i][j].col;
+
+      if (board[row][col] !== currentPlayerChoice) playerWon = false;
+    }
+
+    if (playerWon) return true;
+  }
+
+  return false;
+}
+
+function isGameOver(world) {
+  const currentPlayerChoice = world.movesCount % 2 === 1 ? world.player1Choice : world.player2Choice;
+
+  if (anyRowsMatching(world.board, currentPlayerChoice)) return true;
+
+  if (anyColsMatching(world.board, world.boardLength, currentPlayerChoice)) return true;
+
+  if (anyDiagonalsMatching(world.board, world.boardLength, currentPlayerChoice)) return true;
+
+  return false;
 }
 
 function update(world) {
@@ -161,12 +244,12 @@ function update(world) {
 
   if (keyPressed === r.KEY_ENTER) {
     makeMove(world);
+    world.playerWon = isGameOver(world);
+    world.isPlaying = !world.playerWon;
   }
 
   if (keyPressed === r.KEY_R) {
-    world.board = clearBoard(world.board, world.boardLength);
-    world.movesCount = 0;
-    world.isPlaying = !world.isPlaying;
+    resetGameState(world);
   }
 }
 
@@ -177,22 +260,39 @@ function drawBoardToWindow(texture) {
   r.DrawTextureRec(texture, textureSource, texturePosition, r.WHITE);
 }
 
-function draw(world) {
-  const prompt = `Enter player ${world.movesCount % 2 + 1} position: ${world.position}`;
-  const gameover = `Enter 'R' to replay`;
+function drawMessages(world) {
+  const textX = 0;
+  const textY = world.texture.height + 30;
+  const textSize = 20;
+  const textColor = r.WHITE;
+  const currentPlayer = world.movesCount % 2;
 
+  const prompt = `Enter player ${currentPlayer + 1} position: ${world.position}`;
+  const playerWon = `Player ${Math.abs(currentPlayer - 1) + 1} Won`;
+  const gameover = `Enter 'R' to replay`;
+  const gameTie = `Match tie`;
+
+  if (world.isPlaying && !world.playerWon) {
+    r.DrawText(prompt, textX, textY, textSize, textColor);
+  }
+
+  if (world.playerWon) {
+    r.DrawText(playerWon, textX, textY, textSize, textColor);
+  }
+
+  if (!world.playerWon && (world.movesCount === (world.boardLength * world.boardLength))) {
+    r.DrawText(gameTie, textX, textY, textSize, textColor);
+  }
+
+  r.DrawText(gameover, textX, textY + textSize, textSize, textColor);
+}
+
+function draw(world) {
   r.BeginDrawing();
   r.ClearBackground(r.BLACK);
 
   drawBoardToWindow(world.texture);
-
-  if (world.isPlaying) {
-    r.DrawText(prompt, 0, world.texture.height + 30, 20, r.WHITE);
-  }
-
-  if (!world.isPlaying) {
-    r.DrawText(gameover, 0, world.texture.height + 30, 20, r.WHITE);
-  }
+  drawMessages(world);
 
   r.EndDrawing();
 }
