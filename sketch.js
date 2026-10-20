@@ -40,9 +40,13 @@ function init() {
   const pixel = createPixel(50, 50, 5, 30, r.WHITE);
   const boardLength = 3;
   const board = createBoard(boardLength);
-  const text = "";
+  const position = "";
+  const positionDelimiter = "-";
+  const player1Char = "X";
+  const player2Char = "O";
+  const movesCount = 0;
 
-  return { screen, pixel, board, boardLength, text };
+  return { screen, pixel, board, boardLength, position, positionDelimiter, player1Char, player2Char, movesCount };
 }
 
 function setup() {
@@ -71,7 +75,7 @@ function drawLineNumbers(boardLength, pixel, offset) {
   }
 }
 
-function drawBoard(boardLength, pixel, board, offset) {
+function drawBoardToTexture(boardLength, pixel, board, offset) {
   for (let i = 1; i <= boardLength; i++) {
     for (let j = 1; j <= boardLength; j++) {
       const x = j * pixel.width;
@@ -92,11 +96,41 @@ function updateTexture(target, board, boardLength, pixel) {
   r.ClearBackground(r.BLACK);
 
   drawLineNumbers(boardLength, pixel, offset);
-  drawBoard(boardLength, pixel, board, offset);
+  drawBoardToTexture(boardLength, pixel, board, offset);
 
   r.EndTextureMode();
 
   return target;
+}
+
+function toAscii(char) { return char.charCodeAt(0); }
+
+function getPlayerChar(movesCount, player1Char, player2Char) { return movesCount % 2 === 0 ? player1Char : player2Char; }
+
+function updatePosition(keyPressed, world) {
+  if (keyPressed >= toAscii("0") && keyPressed <= toAscii("9") || keyPressed === toAscii(world.positionDelimiter)) {
+    world.position += String.fromCharCode(keyPressed);
+  }
+
+  if (keyPressed === r.KEY_BACKSPACE) {
+    world.position = world.position.slice(0, -1);
+  }
+}
+
+function makeMove(world) {
+  const positions = world.position.split(world.positionDelimiter);
+
+  if ((positions.length === 2) && ((positions[0].length > 0) && (positions[1].length > 0))) {
+    const row = parseInt(positions[0]) - 1;
+    const col = parseInt(positions[1]) - 1;
+
+    if (!(row < 0 || col < 0 || row >= world.boardLength || col >= world.boardLength) && !world.board[row][col]) {
+      world.board[row][col] = getPlayerChar(world.movesCount, world.player1Char, world.player2Char);
+      world.movesCount++;
+    }
+  }
+
+  world.position = "";
 }
 
 function update(world) {
@@ -104,20 +138,29 @@ function update(world) {
 
   const keyPressed = r.GetKeyPressed();
 
-  if (keyPressed) {
-    world.text += String.fromCharCode(keyPressed);
+  updatePosition(keyPressed, world);
+
+  if (keyPressed === r.KEY_ENTER) {
+    makeMove(world);
   }
 }
 
-function draw(world) {
-  const textureSource = { x: 0, y: 0, width: world.texture.width, height: -world.texture.height };
+function drawBoardToWindow(texture) {
+  const textureSource = { x: 0, y: 0, width: texture.width, height: -texture.height };
   const texturePosition = { x: 0, y: 0 };
+
+  r.DrawTextureRec(texture, textureSource, texturePosition, r.WHITE);
+}
+
+function draw(world) {
+  const formattedText = `Enter player ${world.movesCount % 2 + 1} position: ${world.position}`;
 
   r.BeginDrawing();
   r.ClearBackground(r.BLACK);
 
-  r.DrawTextureRec(world.texture, textureSource, texturePosition, r.WHITE);
-  r.DrawText(world.text, 0, 0, 30, r.WHITE);
+  drawBoardToWindow(world.texture);
+
+  r.DrawText(formattedText, 0, world.texture.height + 30, 20, r.WHITE);
 
   r.EndDrawing();
 }
