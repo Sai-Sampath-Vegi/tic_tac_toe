@@ -21,7 +21,7 @@ function drawLineNumbers(boardLength, pixel, offset) {
   }
 }
 
-function drawBoard(boardLength, pixel, board, offset) {
+function drawBoard(boardLength, pixel, gameBoard, offset) {
   for (let i = 1; i <= boardLength; i++) {
     for (let j = 1; j <= boardLength; j++) {
       const x = j * pixel.width;
@@ -30,26 +30,29 @@ function drawBoard(boardLength, pixel, board, offset) {
       const rect = { x, y, width: pixel.width, height: pixel.height, };
 
       r.DrawRectangleLinesEx(rect, pixel.lineThickness, pixel.color);
-      r.DrawText(String(board[i - 1][j - 1]), x + offset, y + offset, pixel.textSize, pixel.color);
+      r.DrawText(String(gameBoard[i - 1][j - 1]), x + offset, y + offset, pixel.textSize, pixel.color);
     }
   }
 }
 
-function updateTexture(target, board, boardLength, pixel) {
+function updateTexture(target, gameBoard, boardLength, pixel) {
   const offset = ((pixel.width - pixel.textSize) - pixel.lineThickness);
 
   r.BeginTextureMode(target);
   r.ClearBackground(r.BLACK);
 
   drawLineNumbers(boardLength, pixel, offset);
-  drawBoard(boardLength, pixel, board, offset);
+  drawBoard(boardLength, pixel, gameBoard, offset);
 
   r.EndTextureMode();
 
   return target;
 }
 
+function teardown(target) { r.UnloadRenderTexture(target); }
+
 module.exports = {
   createTexture,
   updateTexture,
+  teardown,
 };

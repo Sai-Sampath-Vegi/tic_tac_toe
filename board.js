@@ -1,7 +1,7 @@
 const r = require("raylib");
 
 function createBoard(boardLength) {
-  const board = [];
+  const gameBoard = [];
 
   for (let i = 0; i < boardLength; i++) {
     const row = [];
@@ -9,20 +9,20 @@ function createBoard(boardLength) {
       row.push("");
     }
 
-    board.push(row);
+    gameBoard.push(row);
   }
 
-  return board;
+  return { gameBoard, boardLength };
 }
 
-function clearBoard(board, boardLength) {
+function clearBoard(gameBoard, boardLength) {
   for (let row = 0; row < boardLength; row++) {
     for (let col = 0; col < boardLength; col++) {
-      board[row][col] = "";
+      gameBoard[row][col] = "";
     }
   }
 
-  return board;
+  return gameBoard;
 }
 
 function drawBoard(texture) {

@@ -1,52 +1,64 @@
 const r = require("raylib");
+const board = require("./board");
 
-function getPlayerChar(movesCount, player1Choice, player2Choice) { return movesCount % 2 === 0 ? player1Choice : player2Choice; }
+function getPlayerChoice(movesCount, playerChoices) { return playerChoices[movesCount % 2 + 1]; }
 
 function toAscii(char) { return char.charCodeAt(0); }
 
-function updatePosition(keyPressed, world) {
-  if (!world.isPlaying) return;
+function updateUserInput(keyPressed, world) {
+  if (!world.gameState.isPlaying) return;
 
-  if (keyPressed >= toAscii("0") && keyPressed <= toAscii("9") || keyPressed === toAscii(world.positionDelimiter)) {
-    world.position += String.fromCharCode(keyPressed);
+  if (
+    keyPressed >= toAscii("0") && keyPressed <= toAscii("9") ||
+    keyPressed === toAscii(world.position.delimiter)
+  ) {
+    world.position.input += String.fromCharCode(keyPressed);
   }
 
   if (keyPressed === r.KEY_BACKSPACE) {
-    world.position = world.position.slice(0, -1);
+    world.position.input = world.position.input.slice(0, -1);
   }
 }
 
 function makeMove(world) {
-  const positions = world.position.split(world.positionDelimiter);
+  const positions = world.position.input.split(world.position.delimiter);
 
-  if ((positions.length === 2) && ((positions[0].length > 0) && (positions[1].length > 0))) {
+  if (
+    (positions.length === 2) &&
+    ((positions[0].length > 0) && (positions[1].length > 0))
+  ) {
     const row = parseInt(positions[0]) - 1;
     const col = parseInt(positions[1]) - 1;
 
-    if (!(row < 0 || col < 0 || row >= world.boardLength || col >= world.boardLength) && !world.board[row][col]) {
-      world.board[row][col] = getPlayerChar(world.movesCount, world.player1Choice, world.player2Choice);
-      world.movesCount++;
+    if (
+      !(row < 0 || col < 0 ||
+        row >= world.board.boardLength || col >= world.board.boardLength) &&
+      !world.board.gameBoard[row][col]
+    ) {
+      world.board.gameBoard[row][col] =
+        getPlayerChoice(world.gameState.movesCount, world.playerChoices);
+      world.gameState.movesCount++;
     }
   }
 
-  world.position = "";
+  world.position.input = "";
 }
 
-function updatePlayingStatus(movesCount, boardLength, isPlaying) {
+function getPlayingStatus(movesCount, boardLength, isPlaying) {
   return movesCount === (boardLength * boardLength) ? false : isPlaying;
 }
 
 function resetGameState(world) {
-  world.board = clearBoard(world.board, world.boardLength);
-  world.movesCount = 0;
-  world.isPlaying = true;
-  world.playerWon = false;
+  world.board.gameBoard = board.clearBoard(world.board.gameBoard, world.board.boardLength);
+  world.gameState.movesCount = 0;
+  world.gameState.isPlaying = true;
+  world.gameState.playerWon = false;
 }
 
-function anyRowsMatching(board, currentPlayerChoice) {
+function anyRowsMatching(gameBoard, currentPlayerChoice) {
   let playerWon = false;
 
-  for (const row of board) {
+  for (const row of gameBoard) {
     playerWon = true;
 
     for (const col of row) {
@@ -59,14 +71,14 @@ function anyRowsMatching(board, currentPlayerChoice) {
   return false;
 }
 
-function anyColsMatching(board, boardLength, currentPlayerChoice) {
+function anyColsMatching(gameBoard, boardLength, currentPlayerChoice) {
   let playerWon = false;
 
   for (let row = 0; row < boardLength; row++) {
     playerWon = true;
 
     for (let col = 0; col < boardLength; col++) {
-      if (board[col][row] !== currentPlayerChoice) playerWon = false;
+      if (gameBoard[col][row] !== currentPlayerChoice) playerWon = false;
     }
 
     if (playerWon) return true;
@@ -86,7 +98,7 @@ function getDiagonals(boardLength) {
   return diagonals;
 }
 
-function anyDiagonalsMatching(board, boardLength, currentPlayerChoice) {
+function anyDiagonalsMatching(gameBoard, boardLength, currentPlayerChoice) {
   const diagonals = getDiagonals(boardLength);
   let playerWon = false;
 
@@ -97,7 +109,7 @@ function anyDiagonalsMatching(board, boardLength, currentPlayerChoice) {
       const row = diagonals[i][j].row;
       const col = diagonals[i][j].col;
 
-      if (board[row][col] !== currentPlayerChoice) playerWon = false;
+      if (gameBoard[row][col] !== currentPlayerChoice) playerWon = false;
     }
 
     if (playerWon) return true;
@@ -107,21 +119,22 @@ function anyDiagonalsMatching(board, boardLength, currentPlayerChoice) {
 }
 
 function isGameOver(world) {
-  const currentPlayerChoice = world.movesCount % 2 === 1 ? world.player1Choice : world.player2Choice;
+  const currentPlayer = world.gameState.movesCount % 2;
+  const currentPlayerChoice = world.playerChoices[Math.abs(currentPlayer - 1) + 1];
 
-  if (anyRowsMatching(world.board, currentPlayerChoice)) return true;
+  if (anyRowsMatching(world.board.gameBoard, currentPlayerChoice)) return true;
 
-  if (anyColsMatching(world.board, world.boardLength, currentPlayerChoice)) return true;
+  if (anyColsMatching(world.board.gameBoard, world.board.boardLength, currentPlayerChoice)) return true;
 
-  if (anyDiagonalsMatching(world.board, world.boardLength, currentPlayerChoice)) return true;
+  if (anyDiagonalsMatching(world.board.gameBoard, world.board.boardLength, currentPlayerChoice)) return true;
 
   return false;
 }
 
 module.exports = {
-  updatePosition,
+  updateUserInput,
   makeMove,
-  updatePlayingStatus,
+  getPlayingStatus,
   resetGameState,
   isGameOver,
 };
