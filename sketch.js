@@ -45,9 +45,13 @@ function createScreen(width, height, title) { return { width, height, title }; }
 
 function createPixel(width, height, lineThickness, textSize, color) { return { width, height, lineThickness, textSize, color }; }
 
+function toAscii(char) { return char.charCodeAt(0); }
+
+function getPlayerChar(movesCount, player1Char, player2Char) { return movesCount % 2 === 0 ? player1Char : player2Char; }
+
 function init() {
   const screen = createScreen(400, 400, "Tic Tac Toe");
-  const pixel = createPixel(50, 50, 5, 30, r.WHITE);
+  const pixel = createPixel(50, 50, 2.5, 30, r.WHITE);
   const boardLength = 3;
   const board = createBoard(boardLength);
   const position = "";
@@ -55,8 +59,9 @@ function init() {
   const player1Char = "X";
   const player2Char = "O";
   const movesCount = 0;
+  const isPlaying = true;
 
-  return { screen, pixel, board, boardLength, position, positionDelimiter, player1Char, player2Char, movesCount };
+  return { screen, pixel, board, boardLength, position, positionDelimiter, player1Char, player2Char, movesCount, isPlaying, };
 }
 
 function setup() {
@@ -73,7 +78,7 @@ function setup() {
   return world;
 }
 
-function drawLineNumbers(boardLength, pixel, offset) {
+function drawLineNumbersToTexture(boardLength, pixel, offset) {
   for (let j = 1; j <= boardLength; j++) {
     const x = j * pixel.width + offset;
     r.DrawText(String(j), x, pixel.lineThickness, pixel.textSize, pixel.color);
@@ -105,7 +110,7 @@ function updateTexture(target, board, boardLength, pixel) {
   r.BeginTextureMode(target);
   r.ClearBackground(r.BLACK);
 
-  drawLineNumbers(boardLength, pixel, offset);
+  drawLineNumbersToTexture(boardLength, pixel, offset);
   drawBoardToTexture(boardLength, pixel, board, offset);
 
   r.EndTextureMode();
@@ -113,11 +118,9 @@ function updateTexture(target, board, boardLength, pixel) {
   return target;
 }
 
-function toAscii(char) { return char.charCodeAt(0); }
-
-function getPlayerChar(movesCount, player1Char, player2Char) { return movesCount % 2 === 0 ? player1Char : player2Char; }
-
 function updatePosition(keyPressed, world) {
+  if (!world.isPlaying) return;
+
   if (keyPressed >= toAscii("0") && keyPressed <= toAscii("9") || keyPressed === toAscii(world.positionDelimiter)) {
     world.position += String.fromCharCode(keyPressed);
   }
@@ -143,6 +146,10 @@ function makeMove(world) {
   world.position = "";
 }
 
+function updatePlayingStatus(movesCount, boardLength, isPlaying) {
+  return movesCount === (boardLength * boardLength) ? false : isPlaying;
+}
+
 function update(world) {
   updateTexture(world.target, world.board, world.boardLength, world.pixel);
 
@@ -150,12 +157,16 @@ function update(world) {
 
   updatePosition(keyPressed, world);
 
+  world.isPlaying = updatePlayingStatus(world.movesCount, world.boardLength, world.isPlaying);
+
   if (keyPressed === r.KEY_ENTER) {
     makeMove(world);
   }
 
   if (keyPressed === r.KEY_R) {
     world.board = clearBoard(world.board, world.boardLength);
+    world.movesCount = 0;
+    world.isPlaying = !world.isPlaying;
   }
 }
 
@@ -168,13 +179,20 @@ function drawBoardToWindow(texture) {
 
 function draw(world) {
   const prompt = `Enter player ${world.movesCount % 2 + 1} position: ${world.position}`;
+  const gameover = `Enter 'R' to replay`;
 
   r.BeginDrawing();
   r.ClearBackground(r.BLACK);
 
   drawBoardToWindow(world.texture);
 
-  r.DrawText(prompt, 0, world.texture.height + 30, 20, r.WHITE);
+  if (world.isPlaying) {
+    r.DrawText(prompt, 0, world.texture.height + 30, 20, r.WHITE);
+  }
+
+  if (!world.isPlaying) {
+    r.DrawText(gameover, 0, world.texture.height + 30, 20, r.WHITE);
+  }
 
   r.EndDrawing();
 }
