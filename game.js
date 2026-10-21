@@ -121,14 +121,19 @@ function anyDiagonalsMatching(gameBoard, boardLength, currentPlayerChoice) {
 function isGameOver(world) {
   const currentPlayer = world.gameState.movesCount % 2;
   const currentPlayerChoice = world.playerChoices[Math.abs(currentPlayer - 1) + 1];
+  const playerWon = { playerWon: true, gameTie: false };
+  const gameTie = { playerWon: false, gameTie: true };
+  const gameNotOver = { playerWon: false, gameTie: false };
 
-  if (anyRowsMatching(world.board.gameBoard, currentPlayerChoice)) return true;
+  if (anyRowsMatching(world.board.gameBoard, currentPlayerChoice)) return playerWon;
 
-  if (anyColsMatching(world.board.gameBoard, world.board.boardLength, currentPlayerChoice)) return true;
+  if (anyColsMatching(world.board.gameBoard, world.board.boardLength, currentPlayerChoice)) return playerWon;
 
-  if (anyDiagonalsMatching(world.board.gameBoard, world.board.boardLength, currentPlayerChoice)) return true;
+  if (anyDiagonalsMatching(world.board.gameBoard, world.board.boardLength, currentPlayerChoice)) return playerWon;
 
-  return false;
+  if (world.gameState.movesCount === (world.board.boardLength * world.board.boardLength)) return gameTie;
+
+  return gameNotOver;
 }
 
 module.exports = {

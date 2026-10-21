@@ -28,6 +28,7 @@ function init() {
     movesCount: 0,
     isPlaying: true,
     playerWon: false,
+    gameTie: false,
   };
 
   return { screen, pixel, board: board.createBoard(boardLength), position, playerChoices, gameState, };
@@ -59,7 +60,12 @@ function update(world) {
 
   if (keyPressed === r.KEY_ENTER) {
     game.makeMove(world);
-    world.gameState.playerWon = game.isGameOver(world);
+
+    let playerWon, gameTie;
+    ({ playerWon, gameTie } = game.isGameOver(world));
+    world.gameState.playerWon = playerWon;
+    world.gameState.gameTie = gameTie;
+
     world.gameState.isPlaying = !world.gameState.playerWon;
   }
 
@@ -80,15 +86,15 @@ function drawMessages(world) {
   const restartGame = `Enter 'R' to restart`;
   const gameTie = `Match tie`;
 
-  if (world.gameState.isPlaying && !world.gameState.playerWon) {
+  if (world.gameState.isPlaying && !world.gameState.playerWon && !world.gameState.gameTie) {
     r.DrawText(prompt, textX, textY, textSize, textColor);
   }
 
-  if (world.gameState.playerWon) {
+  if (world.gameState.playerWon && !world.gameState.gameTie) {
     r.DrawText(playerWon, textX, textY, textSize, textColor);
   }
 
-  if (!world.gameState.playerWon && (world.gameState.movesCount === (world.boardLength * world.boardLength))) {
+  if (world.gameState.gameTie) {
     r.DrawText(gameTie, textX, textY, textSize, textColor);
   }
 
