@@ -75,9 +75,9 @@ function drawMessages(world) {
   const textColor = r.WHITE;
   const currentPlayer = world.gameState.movesCount % 2;
 
-  const prompt = `Enter player ${currentPlayer + 1} position: ${world.position.input}`;
+  const prompt = `Enter player ${currentPlayer + 1} position (row-col): ${world.position.input}`;
   const playerWon = `Player ${Math.abs(currentPlayer - 1) + 1} Won`;
-  const gameover = `Enter 'R' to replay`;
+  const restartGame = `Enter 'R' to restart`;
   const gameTie = `Match tie`;
 
   if (world.gameState.isPlaying && !world.gameState.playerWon) {
@@ -92,7 +92,7 @@ function drawMessages(world) {
     r.DrawText(gameTie, textX, textY, textSize, textColor);
   }
 
-  r.DrawText(gameover, textX, textY + textSize, textSize, textColor);
+  r.DrawText(restartGame, textX, textY + textSize, textSize, textColor);
 }
 
 function draw(world) {
