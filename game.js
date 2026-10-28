@@ -53,6 +53,7 @@ function resetGameState(world) {
   world.gameState.movesCount = 0;
   world.gameState.isPlaying = true;
   world.gameState.playerWon = false;
+  world.gameState.gameTie = false;
 }
 
 function anyRowsMatching(gameBoard, currentPlayerChoice) {
